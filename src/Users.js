@@ -1,41 +1,20 @@
 import React, { useReducer, useEffect } from "react";
 import axios from 'axios';
+import useAsync, { reducer } from "./useAsync";
 
-function reducer(state, action) {
-    switch (action.type) {
-        case 'LOADING': return ({ loading: true, data: null, error: null });
-        case 'SUCCESS': return ({ loading: false, data: action.data, error: null });
-        case 'ERROR': return ({ loading: false, data: null, error: action.error });
-        default: throw new Error(`Unhandled actio type: , ${action.type}`);
-    }
+async function getUsers() {
+    const response = await axios.get('https://jsonplaceholder.typicode.com/users');
+    return response.data;
 }
 
 function Users() {
-    const [state, dispatch] = useReducer(reducer, {
-        loading: false,
-        data: null,
-        error: null
-    })
-    const fetchUsers = async () => {
-        dispatch({ type: "LOADING" });
-        try {
-            const response = await axios.get('https://jsonplaceholder.typicode.com/users');
-            dispatch({ type: "SUCCESS", data: response.data });
-        } catch (e) {
-            console.log(e.response.status);
-            dispatch({ type: 'ERROR', error: e })
-        }
-    };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    const [state, refetch] = useAsync(getUsers, [], true);
 
     const { loading, data: users, error } = state;
 
     if (loading) return <div>loading ...</div>
     if (error) return <div>error...</div>
-    if (!users) return null;
+    if (!users) return <button onClick={refetch}>데이터 가져오기</button>;
 
     return (
         <>
@@ -46,7 +25,7 @@ function Users() {
                     </li>
                 ))}
             </ul>
-            <button onClick={fetchUsers}>reload</button>
+            <button onClick={refetch}>reload</button>
         </>
     );
 }
